@@ -1,0 +1,22 @@
+jenkins $ java -jar jenkins-cli.jar -s http://13.232.105.82:9080/ -auth @passwordfile -webSocket list-jobs > jobs
+jenkins $
+jenkins $
+jenkins $ cat jobs
+anisble-project
+ansible-sample
+chef-8am
+chef-project
+dev-flipkart
+prod-flipkart
+sample1
+jenkins $
+jenkins $
+jenkins $ for i in `cat jobs`
+> do
+> java -jar jenkins-cli.jar -s http://13.232.105.82:9080/ -auth @passwordfile -webSocket disable-job $i
+> done
+jenkins $
+jenkins $
+jenkins $
+jenkins $ for i in `cat jobs`; do java -jar jenkins-cli.jar -s http://13.232.105.82:9080/ -auth @passwordfile -webSocket enable-job $i; done
+jenkins $

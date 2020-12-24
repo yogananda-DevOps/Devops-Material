@@ -1,0 +1,69 @@
+Install
+-   yum install httpd tomcat7 -y
+-   yum install httpd tomcat7 tomcat7-webapps tomcat7-admin-webapps -y
+
+Start the services
+
+-	service httpd start; service tomcat7 start
+
+Validate -
+
+i) From Server
+[root@ip-172-31-46-193 ~]# service httpd status; service tomcat7 status
+httpd (pid  2827) is running...
+[root@ip-172-31-46-193 ~]# ng...                           [  OK  ]
+
+ii) From Browser also
+
+	a) Apache - <IP>:80
+	it should show below -
+	
+		message - This page is used to test the proper operation of the Apache HTTP server after it has been installed. If you can read this page, it means that the Apache HTTP server installed at this site is working properly.
+	
+	b) Tomcat7
+		
+		We validatd and found that there is an issue
+		
+		This 15.206.167.132 page can’t be foundNo webpage was found for the web address: http://15.206.167.132:8080/
+		HTTP ERROR 404
+		
+Now go to server and troubleshoot
+
+- [root@ip-172-31-46-193 ~]# netstat -anp | grep 8080
+	tcp        0      0 :::8080                     :::*  LISTEN      2891/java
+			
+			- Check the process
+				
+[root@ip-172-31-46-193 ~]# ps -ef|grep 2891
+				tomcat    2891     1  0 03:49 ?        00:00:02 /usr/lib/jvm/jre/bin/java -classpath :/usr/share/tomcat7/bin/bootstrap.jar:/usr/share/tomcat7/bin/tomcat-juli.jar:/usr/share/java/commons-daemon.jar -Dcatalina.base=/usr/share/tomcat7 -Dcatalina.home=/usr/share/tomcat7 -Djava.endorsed.dirs= -Djava.io.tmpdir=/var/cache/tomcat7/temp -Djava.util.logging.config.file=/usr/share/tomcat7/conf/logging.properties -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager org.apache.catalina.startup.Bootstrap start
+
+- We will go to tomcat home or $CATALINA_HOME
+			
+[root@ip-172-31-46-193 httpd]# whereis tomcat7
+tomcat7: /usr/sbin/tomcat7 /etc/tomcat7 /usr/libexec/tomcat7 /usr/share/tomcat7
+
+cd /usr/share/tomcat7
+
+[root@ip-172-31-46-193 tomcat7]# export CATALINA_HOME=/usr/share/tomcat7
+
+yum install httpd tomcat7 tomcat-webapps tomcat7-admin-webapps -y
+
+cd /usr/share/tomcat7/webapps
+mv examples amazon
+mv samples flipkart
+
+Integrate
+
+go to $APACHE_HOME and edit proxypass.conf file -
+
+cd /etc/httpd/conf.d 
+
+ProxyPass /amazon http://15.206.167.132:8080/amazon/
+ProxyPassReverse /amazon http://15.206.167.132:8080/amazon/
+
+ProxyPass /flipkart http://15.206.167.132:8080/flipkart/
+ProxyPassReverse /flipkart http://15.206.167.132:8080/flipkart/
+		
+Search and replace in vim-
+
+ :%s!15.206.167.132!localhost!g

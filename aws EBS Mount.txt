@@ -1,0 +1,60 @@
+1. Create EBS Volume in AWS console and attach it to Server in same AZ
+
+2. Login to server and list attached blocks
+
+>>   lsblk
+
+3. Check if there is any file system type at block attached.
+
+Use the file -s command to get information about a device, such as its file system type. If the output shows simply data, as in the following example output, there is no file system on the device and you must create one.
+
+>> sudo file -s /dev/xvdf
+
+[root@ip-172-31-46-135 jenkins]# file -s /dev/xvdf
+/dev/xvdf: data
+[root@ip-172-31-46-135 jenkins]#
+
+mkfs -t xfs /dev/xvdf
+
+ mkfs.xfs is not found, so install a program for it
+
+>> yum install xfsprogs -y
+
+5. configure file system type for the block attached
+
+>> mkfs -t xfs /dev/xvdf
+
+[root@ip-172-31-46-135 jenkins]# file -s /dev/xvdf
+/dev/xvdf: SGI XFS filesystem data (blksz 4096, inosz 512, v2 dirs)
+[root@ip-172-31-46-135 jenkins]#
+
+6. Create a Directory to mount
+
+>>  mkdir /jenkins-home
+
+>>  ls -ld /jenkins-home
+>>  df -h /jenkins-home
+
+7. Finally Mount it -
+
+>>  mount /dev/xvdf /jenkins-home/
+
+reboot
+
+8. Make it permanent - add the jenkins entry in /etc/fstab
+
+[root@ip-172-31-46-135 jenkins]# cat /etc/fstab
+#
+LABEL=/     /           ext4    defaults,noatime  1   1
+tmpfs       /dev/shm    tmpfs   defaults        0   0
+devpts      /dev/pts    devpts  gid=5,mode=620  0   0
+sysfs       /sys        sysfs   defaults        0   0
+proc        /proc       proc    defaults        0   0
+/dev/xvdf /jenkins-home xfs defaults        0   0
+
+9) Un-mount and mount it again
+
+>>  umount /jenkins-home
+
+>> mount -a (this will mount all what is present in fstab)
+
