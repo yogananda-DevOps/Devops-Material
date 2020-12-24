@@ -1,0 +1,125 @@
+KOPS: Kubernetes Operations
+Is a software using which we can create production ready highly available k8s cluster in AWS.
+
+KOPS supports other cloud providers also to create k8s cluster.
+
+KOPS will create few aws resources like autoscaling groups, launch configurations for master and worker nodes. So 
+AWS autoscaling groups will make sure we have enough  number of master and worker instances.
+
+For this first create an instance and install KOPS. Using KOPS you can create K8s cluster. This instance can be with AWS or can be virtual machine as well. 
+Remember that the instance where you installed KOPS is not part of K8s cluster.
+
+Then install AWS CLI as from this instnace u have to connect to AWS to create k8s cluster and it needs to use commands.
+
+Then install kubectl as it has to communicate with master.
+
+So total we have to install 3 things: AWS CLI, KOPS and kubectl.
+
+Steps to create:
+1) Create an ubuntu instnace in AWS. you cna take RedHat also.
+
+2) Install AWS CLI: 
+-------------------
+sudo apt update -y
+sudo curl https://s3.amazonaws.com/aws-cli/awscli-bundle.zip -o awscli-bundle.zip
+sudo apt install unzip python -y
+sudo unzip awscli-bundle.zip
+##sudo apt-get install unzip - if unzip command is not on your system
+sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+aws --version
+
+
+3)Installing KOPS on our server:
+--------------------------------
+## First install wget command if u dont have it
+sudo apt install wget -y
+Then got to kops HitHub and select the version of kops you want to intstall from this url: https://github.com/kubernetes/kops/releases
+sudo wget https://github.com/kubernetes/kops/releases/download/v1.16.1/kops-linux-amd64
+sudo chmod +x kops-linux-amd64
+sudo mv kops-linux-amd64 /usr/local/bin/kops
+kops --version
+
+4)Installing kubectl:
+---------------------
+sudo curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+sudo chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+kubectl version
+
+
+ 
+ 
+Create an IAM user/role with EC2, IAM, VPC and S3 full access.
+
+Then attach IAM role to ubuntu instance from console.  Select the instance, go to Actions, then Instance Settings, then Attach/Replace IAM Role, Then select the IAM role we created and save it.
+
+
+5)Then create an S3 bucket:
+---------------------------
+This s3 bucket will be used as etcd to maintain data. Why this s3 bucket instead of etcd on master is, If master goes down, then new masterwill be created with Auto scaling configuration. so the data will be lost. so it maintains that in S3.
+
+ aws s3 mb s3://kctech.k8s.local
+ ##S3 bucket name should be unique across AWS.
+ 
+ aws s3 ls
+ 
+6) Then create 2 environmental variables and set values:
+--------------------------------------------------------
+ For that open bashrc file
+ 
+ vi .bashrc
+export NAME=kctech.k8s.local
+export KOPS_STATE_STORE=s3://kctech.k8s.local
+
+then save it and run source command.
+source .bashrc
+
+
+7)Create sshkeys before creating cluster:
+-----------------------------------------
+ssh-keygen
+
+
+8)Create kubernetes cluster definitions on S3 bucket:
+-----------------------------------------------------
+kops create cluster  --zones ap-south-1a --networking weave --master-size t2.medium --master-count 1 --node-size t2.micro --node-count=2 ${NAME}
+
+kops create secret --name ${NAME} sshpublickey admin ~i ~/.ssh/id_rsa.pub
+ 
+9)Create kubernetes cluster:
+----------------------------
+kops update cluster ${NAME} --yes
+
+10)Validate your cluster:
+-------------------------
+Kops will take sometime to create cluster. So execute below command after sometime.
+kops validate cluster
+
+11)Check .kube/config file is there or not:
+-------------------------------------------
+ls -la
+cat .kube/config
+
+11)To list nodes:
+-----------------
+kubectl get nodes
+
+
+kubectl get pods
+kubectl get pods --all-namespaces
+
+
+Then delete worker/master nodes and test whether they are auto creating using auto scaling.
+Then create manifest files and start working.
+
+
+
+
+
+
+
+
+
+
+
+
